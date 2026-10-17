@@ -1,9 +1,20 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.db import create_db_and_tables
+from app.routers import meetings
 
-app = FastAPI(title="AI Meeting Summarizer")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
+    yield
+
+
+app = FastAPI(title="AI Meeting Summarizer", lifespan=lifespan)
 
 # Allow the Vite dev server (React) to call this API from the browser.
 app.add_middleware(
@@ -12,6 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(meetings.router)
 
 
 @app.get("/health")
